@@ -28,7 +28,7 @@ def affichage(joueur,plateau):
                     print("N", end=" ")
             else:
                 if coup_valide(joueur,[ligne,colonne],plateau):
-                    print("x", end=" ")
+                    print("*", end=" ")
                 else:
                     print(".", end=" ")
         if ligne == 0:
@@ -166,7 +166,7 @@ def playerScore(plateau):
     return [score_white,score_black]
 
 def main():
-    plateau = debug()
+    plateau = init()
 
     #J1 commence (J1 Blanc, J2 Noir)
     currentPlayer = 0
