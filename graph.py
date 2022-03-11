@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 import numpy as np
+from ai import mat_points
+from game import coups_possibles, playerScore, jouer_coup, matrixToString
+
 
 class Graphe: # L'objet graphe
 
-    def __init__(self, EI, E, Adj): 
+    def __init__(self, EI, E, Adj, plateau): 
         self.EI = EI # EI = [etat initial 1]
         self.E = E # E = [[indice etat, le plateau, le poids], ...]
         self.Adj = Adj # Adj = [[successeurs de 1], [successeurs de 2], ...]
         self.g = [[], [], []]
+        self.plateau = plateau
 
     def creation(self):
         self.g = [self.EI, self.E, self.Adj]
@@ -35,6 +39,32 @@ class Graphe: # L'objet graphe
         for k in range(n): # Pour chaque etat de E associe le poids correspondant du même indice de Lpoids.
             self.E[Letat[k]-1][2] = Lpoids[k] 
         self.g[1] = self.E
+
+    def evaluation_positionnel(self, coupMatrix):
+        return mat_points[coupMatrix]
+
+    def evaluation_mobilite(self, idsommet, coupMatrix, currentPlayer):
+        plateau = self.g[1][idsommet][2]
+        return len(coups_possibles(currentPlayer,plateau))
+    
+    def evaluation_absolue(self, idsommet, coupMatrix, currentPlayer):
+        plateau_bis = self.g[1][idsommet][2]
+        plateau = plateau_bis.copy
+        jouer_coup(currentPlayer, matrixToString(coupMatrix), plateau)
+        return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
+
+    def evaluation_sommet(self, ncoup, ia, idsommet, coupMatrix, currentPlayer):
+        if ia == "positionnel" or (ia == "mixte" and ncoup < 24):
+            return Graphe.evaluation_positionnel(coupMatrix)
+        if ia == "mobilité" or (ia == "mixte" and ncoup < 44):
+            return Graphe.evaluation_mobilite(idsommet, coupMatrix, currentPlayer)
+        if ia == "absolue" or (ia == "mixte" and ncoup > 43):
+            return Graphe.evaluation_absolue(idsommet, coupMatrix, currentPlayer)
+
+
+
+
+
         
 
     
@@ -63,3 +93,4 @@ print(graphe)
 Graphe_othello.modifierPoids([2, 4], [8, 9]) 
 graphe = Graphe_othello.g         
 print(graphe)
+
