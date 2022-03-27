@@ -100,9 +100,9 @@ class Graphe: # L'objet graphe
                     poids = Graphe.poids_liste(self.g[2][paliers[-(k+2)][i]-1])
                     if len(poids>0):
                         if ((n-k)/2 - (n-k)//2 == 0 and tmax == False) or (((n-k)/2 - (n-k)//2 != 0 and tmax)):
-                            self.g[1][paliers[-(k+2)][i]-1][2] = max(poids)
+                            self.g[1][paliers[-(k+2)][i]-1][2] = - max(poids) #il faut inverser le signe du poids en fonction du point de vue qu'on prend (+ si c'est l'ia, - si c'est l'adversaire)
                         else:
-                            self.g[1][paliers[-(k + 2)][i] - 1][2] = min(poids)
+                            self.g[1][paliers[-(k + 2)][i] - 1][2] = - min(poids)
 
 
 
