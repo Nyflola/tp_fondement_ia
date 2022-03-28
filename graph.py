@@ -74,6 +74,7 @@ class Graphe: # L'objet graphe
                 k += len(L_adj[L_paliers[-2][i]-1])
         return L_paliers
 
+    #Renvoie la liste des poids des sommets de la liste à indices égaux
     def poids_liste(self, L):
         pds = []
         for k in range(len(L)):
@@ -100,9 +101,9 @@ class Graphe: # L'objet graphe
                     poids = Graphe.poids_liste(self.g[2][paliers[-(k+2)][i]-1])
                     if len(poids>0):
                         if ((n-k)/2 - (n-k)//2 == 0 and tmax == False) or (((n-k)/2 - (n-k)//2 != 0 and tmax)):
-                            self.g[1][paliers[-(k+2)][i]-1][2] = - max(poids) #il faut inverser le signe du poids en fonction du point de vue qu'on prend (+ si c'est l'ia, - si c'est l'adversaire)
+                            self.g[1][paliers[-(k+2)][i]-1][2] = max(poids)
                         else:
-                            self.g[1][paliers[-(k + 2)][i] - 1][2] = - min(poids)
+                            self.g[1][paliers[-(k + 2)][i] - 1][2] = min(poids)
 
 
 
