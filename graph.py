@@ -1,43 +1,88 @@
+
 #!/usr/bin/env python3
 import numpy as np
+from copy import deepcopy
 from ai import mat_points
-from game import coups_possibles, playerScore, jouer_coup, matrixToString
+from game import coups_possibles, playerScore, jouer_coup, matrixToString, affichage
 
 
-class Graphe: # L'objet graphe
+class Graphe:  # L'objet graphe
 
-    def __init__(self, EI, E, Adj, plateau): 
-        self.EI = EI # EI = [etat initial 1]
-        self.E = E # E = [[indice etat, le plateau, le poids, le joueur qui joue], ...]
-        self.Adj = Adj # Adj = [[successeurs de 1], [successeurs de 2], ...]
-        self.g = [[], [], []]
-        self.plateau = plateau
+    def __init__(self,plateau,joueurActuel, ncoup, IA = "absolue", profondeur = 1):
+        self.idMax = 0 # Indice max utilisé en tant qu'idSommet (utilisé pour la création de sommet)
+        self.etatInitial = 0
+        self.sommets = [[self.idMax,plateau,"None",joueurActuel]]
+        self.successeurs = [[]] # [ [ [1 4], [2 9] ], [] ]
+        self.IA = IA
+        
+        current = [self.etatInitial]
+        next = []
+        joueurSuivant = abs(joueurActuel-1)
+        while self.profondeur() != profondeur:
+            for sommet in current:
+                #print("sommet " + str(sommet))
+                plateau = self.get_plateau(sommet)
+                coups = coups_possibles(joueurActuel,plateau)
+                for coup in coups:
+                    #print("coup " + str(coup))
+                    nouveau_plateau = deepcopy(plateau)
+                    jouer_coup(joueurActuel,matrixToString(coup),nouveau_plateau)
+                    next.append(self.ajout_Sommet(nouveau_plateau,joueurSuivant,IA,sommet,matrixToString(coup),ncoup))
+            current = next
+            next = []
+            joueurActuel = joueurSuivant
+            joueurSuivant = abs(joueurActuel-1)
+        return
 
-    def creation(self):
-        self.g = [self.EI, self.E, self.Adj]
-    #def ajoutEtatInitial(self, element):
-    #self.EI = self.EI + [element]
-    #self.g[0] = self.EI
+    def ajout_Sommet(self,plateau,joueur, IA,idpredecesseur,coup, ncoup):
+        self.idMax = self.idMax + 1
+        nouveau_sommet = [self.idMax,plateau, "None" , joueur]
+        nouveau_successeur = [idpredecesseur,coup]
+        self.sommets += [nouveau_sommet] 
+        self.successeurs[idpredecesseur] += [[self.idMax,coup]] 
+        self.successeurs += [[]]
+        #self.evaluation_sommet(ncoup,IA,self.idMax,self.coup(self.idMax),joueur)
+        return self.idMax
 
-    def ajoutEtat(self, element, plateau, poids, joueur):
-        self.E = self.E + [[element, plateau, poids, joueur]]
-        self.g[1] = self.E 
+    def get_predecesseur(self,idSommet):
+        for successeur in self.successeurs:
+            for element in successeur:
+                if element[0] == idSommet:
+                    return self.successeurs.index(successeur)
+        return None
 
-    def ajoutPredecesseur(self, element, pred): # element = element à  ajouter et pred = son predecesseur (indice)
-        self.Adj[pred-1] = self.Adj[pred-1] + [element]
-        self.Adj = self.Adj + [[]] # instancier la liste des successeurs de element
-        self.g[2] = self.Adj
+    def get_successeurs(self,idSommet):
+        successeurs = []
+        for element in self.successeurs[idSommet]:
+            successeurs += [element[0]]
+        return successeurs
 
-    def ajout(self, element, plateau, pred, poids, initial):
-        Graphe.ajoutEtat(self, element, plateau, poids)
-        Graphe.ajoutPredecesseur(self, element, pred)
-        #if initial:
-        #Graphe.ajoutEtatInitial(self, element)
+    def get_plateau(self,idSommet):
+        return self.sommets[idSommet][1]
 
+    def get_coup(self,idSommet):
+        for successeur in self.successeurs:
+            for element in successeur:
+                if element[0] == idSommet:
+                    return element[1]
+        return
+
+    def profondeur(self, idSommet = 0):
+        succ = self.get_successeurs(idSommet)
+        if idSommet == 0 and len(succ) == 0:
+            return 0
+        if len(succ) == 0:
+            return 0
+        temp = 0
+        for s in succ:
+            temp = max(temp,self.profondeur(s))
+        return 0.5 + temp
+        
     def modifierPoids(self, Letat, Lpoids):
         n = len(Letat)
-        for k in range(n): # Pour chaque etat de E associe le poids correspondant du même indice de Lpoids.
-            self.E[Letat[k]-1][2] = Lpoids[k] 
+        # Pour chaque etat de E associe le poids correspondant du même indice de Lpoids.
+        for k in range(n):
+            self.E[Letat[k]-1][2] = Lpoids[k]
         self.g[1] = self.E
 
     def evaluation_positionnel(self, coupMatrix):
@@ -45,8 +90,8 @@ class Graphe: # L'objet graphe
 
     def evaluation_mobilite(self, idsommet, coupMatrix, currentPlayer):
         plateau = self.g[1][idsommet][2]
-        return len(coups_possibles(currentPlayer,plateau))
-    
+        return len(coups_possibles(currentPlayer, plateau))
+
     def evaluation_absolue(self, idsommet, coupMatrix, currentPlayer):
         plateau_bis = self.g[1][idsommet][2]
         plateau = plateau_bis.copy
@@ -54,18 +99,28 @@ class Graphe: # L'objet graphe
         return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
 
     def evaluation_sommet(self, ncoup, ia, idsommet, coupMatrix, currentPlayer):
-        if ia == "positionnel" or (ia == "mixte" and ncoup < 24):
+        if ia == "positionnelle" or (ia == "mixte" and ncoup < 24):
             return Graphe.evaluation_positionnel(coupMatrix)
-        if ia == "mobilité" or (ia == "mixte" and ncoup < 44):
+        if ia == "mobilitee" or (ia == "mixte" and ncoup < 44):
             return Graphe.evaluation_mobilite(idsommet, coupMatrix, currentPlayer)
         if ia == "absolue" or (ia == "mixte" and ncoup > 43):
             return Graphe.evaluation_absolue(idsommet, coupMatrix, currentPlayer)
 
-    #renvoie la liste [[sommets de hauteur 1], [sommets de hauteur 2], ..., [sommets de hauteur n]]
+    def __str__(self):
+        for sommet in self.sommets:
+            print("---------------------------------")
+            if sommet[0] != 0:
+                print("Sommet n°"+ str(sommet[0])+"\nCoup qui a été joué: "+ self.get_coup(sommet[0]) + "\nSommet précedent: " + str(self.get_predecesseur(sommet[0])) + "\nPoids (selon IA \"" +self.IA + "\"): " + str(sommet[2]) + "\n\nEtat du plateau :")
+            else:
+                print("Etat initial\nEtat du plateau :")
+            affichage(sommet[3],sommet[1])
+        return ""
+
+    # renvoie la liste [[sommets de hauteur 1], [sommets de hauteur 2], ..., [sommets de hauteur n]]
     def palier(self):
         L_paliers = [[1]]
         L_adj = self.g[2]
-        n = len(self.g[1]) #le  nombre de sommets du graphe
+        n = len(self.g[1])  # le  nombre de sommets du graphe
         k = 1
         while k < n:
             L_paliers = L_paliers + [[]]
@@ -74,18 +129,12 @@ class Graphe: # L'objet graphe
                 k += len(L_adj[L_paliers[-2][i]-1])
         return L_paliers
 
-    #Renvoie la liste des poids des sommets de la liste à indices égaux
+    # Renvoie la liste des poids des sommets de la liste à indices égaux
     def poids_liste(self, L):
         pds = []
         for k in range(len(L)):
             pds = pds + [self.g[1][L[k]-1][2]]
         return pds
-
-    #def predecesseur(self, sommet, graphe):
-    #    for i in range(graphe[2]):
-    #        for k in range(graphe[2][i]):
-    #            if graphe[2][i][k] == sommet:
-    #                return graphe[2][i][k]
 
     def min_max(self, ia, joueurTour):
         paliers = Graphe.palier()
@@ -99,44 +148,9 @@ class Graphe: # L'objet graphe
             for k in range(len(paliers)-1):
                 for i in range(len(paliers[-(k+2)])):
                     poids = Graphe.poids_liste(self.g[2][paliers[-(k+2)][i]-1])
-                    if len(poids>0):
+                    if len(poids > 0):
                         if ((n-k)/2 - (n-k)//2 == 0 and tmax == False) or (((n-k)/2 - (n-k)//2 != 0 and tmax)):
                             self.g[1][paliers[-(k+2)][i]-1][2] = max(poids)
                         else:
                             self.g[1][paliers[-(k + 2)][i] - 1][2] = min(poids)
-
-
-
-
-
-
-
-        
-
-    
-#print(P)
-#EI = [1]
-#E = [[1, [], None], [2, [], None], [3, [], None]] #le plateau en 2ème position
-#Adj = [[2, 3], [], []]
-
-#Graphe_othello = Graphe(EI, E, Adj)
-#Graphe_othello.creation()
-#graphe = Graphe_othello.g
-
-#print(graphe)
-
-#Graphe_othello.ajout(4, [], 1, None, False)
-
-#Graphe_othello.ajoutEtat(4, None)
-#Graphe_othello.ajoutPredecesseur(4, 1)
-#graphe = Graphe_othello.ajoutEtat(4, None)
-#graphe = Graphe_othello.ajoutEtatInitial(4)
-#graphe = Graphe_othello.ajoutSuccesseur([1, 2, 3])
-
-#graphe = Graphe_othello.g
-#print(graphe)
-    
-#Graphe_othello.modifierPoids([2, 4], [8, 9])
-#graphe = Graphe_othello.g
-#print(graphe)
 
