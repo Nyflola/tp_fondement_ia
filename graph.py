@@ -14,6 +14,7 @@ class Graphe:  # L'objet graphe
         self.sommets = [[self.idMax,plateau,"None",joueurActuel]]
         self.successeurs = [[]] # [ [ [1 4], [2 9] ], [] ]
         self.IA = IA
+        self.palier = [1]
         
         current = [self.etatInitial]
         next = []
@@ -65,7 +66,14 @@ class Graphe:  # L'objet graphe
             for element in successeur:
                 if element[0] == idSommet:
                     return element[1]
-        return
+        return None
+
+    def get_poids(self, idSommet):
+        return self.sommets[idSommet][2]
+
+    def set_poids(self, idSommet, poids):
+        self.sommets[idSommet][2] = poids
+        return None
 
     def profondeur(self, idSommet = 0):
         succ = self.get_successeurs(idSommet)
@@ -77,34 +85,40 @@ class Graphe:  # L'objet graphe
         for s in succ:
             temp = max(temp,self.profondeur(s))
         return 0.5 + temp
-        
-    def modifierPoids(self, Letat, Lpoids):
-        n = len(Letat)
-        # Pour chaque etat de E associe le poids correspondant du même indice de Lpoids.
-        for k in range(n):
-            self.E[Letat[k]-1][2] = Lpoids[k]
-        self.g[1] = self.E
 
-    def evaluation_positionnel(self, coupMatrix):
+
+        ########################
+        ## A ENLEVER SÛREMENT ##
+        ########################
+
+    #def modifierPoids(self, Letat, Lpoids):
+    #    n = len(Letat)
+    #    # Pour chaque etat de E associe le poids correspondant du même indice de Lpoids.
+    #    for k in range(n):
+    #        self.E[Letat[k]-1][2] = Lpoids[k]
+    #    self.g[1] = self.E
+
+    def evaluation_positionnel(self, coupMatrix): #On regarde les points de la case que l'on vient de jouer
         return mat_points[coupMatrix]
 
-    def evaluation_mobilite(self, idsommet, coupMatrix, currentPlayer):
-        plateau = self.g[1][idsommet][2]
+    def evaluation_mobilite(self, idsommet, currentPlayer): #On regarde le nombre de coups possibles à  ce tour (donc au plateau auquel on regarde)
+        plateau = self.sommets[idsommet][1]
         return len(coups_possibles(currentPlayer, plateau))
 
-    def evaluation_absolue(self, idsommet, coupMatrix, currentPlayer):
-        plateau_bis = self.g[1][idsommet][2]
-        plateau = plateau_bis.copy
-        jouer_coup(currentPlayer, matrixToString(coupMatrix), plateau)
-        return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
+    def evaluation_absolue(self, idsommet, currentPlayer, idIA): #On regarde la différence de pions entre les deux joueurs du point de vue de l'IA
+        plateau = self.sommets[idsommet][1]
+        if currentPlayer == idIA:
+            return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
+        else:
+            return -(playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer - 1)])
 
     def evaluation_sommet(self, ncoup, ia, idsommet, coupMatrix, currentPlayer):
         if ia == "positionnelle" or (ia == "mixte" and ncoup < 24):
-            return Graphe.evaluation_positionnel(coupMatrix)
+            return self.evaluation_positionnel(coupMatrix)
         if ia == "mobilitee" or (ia == "mixte" and ncoup < 44):
-            return Graphe.evaluation_mobilite(idsommet, coupMatrix, currentPlayer)
+            return self.evaluation_mobilite(idsommet,  currentPlayer)
         if ia == "absolue" or (ia == "mixte" and ncoup > 43):
-            return Graphe.evaluation_absolue(idsommet, coupMatrix, currentPlayer)
+            return self.evaluation_absolue(idsommet, coupMatrix, currentPlayer)
 
     def __str__(self):
         for sommet in self.sommets:
@@ -114,43 +128,75 @@ class Graphe:  # L'objet graphe
             else:
                 print("Etat initial\nEtat du plateau :")
             affichage(sommet[3],sommet[1])
+        #print(self.palier)
         return ""
 
     # renvoie la liste [[sommets de hauteur 1], [sommets de hauteur 2], ..., [sommets de hauteur n]]
-    def palier(self):
-        L_paliers = [[1]]
-        L_adj = self.g[2]
-        n = len(self.g[1])  # le  nombre de sommets du graphe
-        k = 1
-        while k < n:
-            L_paliers = L_paliers + [[]]
-            for i in range(len(L_paliers[-2])):
-                L_paliers[-1] = L_paliers[-1] + L_adj[L_paliers[-2][i]-1]
-                k += len(L_adj[L_paliers[-2][i]-1])
-        return L_paliers
+    def get_paliers(self):
+        self.palier = [[self.sommets[0][0]]]
+        L_adj = self.successeurs
+        for k in range(int(2*self.profondeur(self.palier[0][0]))):
+            self.palier = self.palier + [[]]
+            for i in range(len(self.palier[-2])):
+                for j in range(len(L_adj[self.palier[-2][i]])):
+                    self.palier[-1] = self.palier[-1] + [L_adj[self.palier[-2][i]][j][0]]
+        return None
 
     # Renvoie la liste des poids des sommets de la liste à indices égaux
     def poids_liste(self, L):
         pds = []
         for k in range(len(L)):
-            pds = pds + [self.g[1][L[k]-1][2]]
+            pds = pds + [self.get_poids(L[k])]
         return pds
 
-    def min_max(self, ia, joueurTour):
-        paliers = Graphe.palier()
-        tmax = False
-        n = len(paliers)
-        if ia == joueurTour:
-            tmax = True
-        if len(paliers) == 1:
-            return self.g[1][0][2]
-        else:
-            for k in range(len(paliers)-1):
-                for i in range(len(paliers[-(k+2)])):
-                    poids = Graphe.poids_liste(self.g[2][paliers[-(k+2)][i]-1])
-                    if len(poids > 0):
-                        if ((n-k)/2 - (n-k)//2 == 0 and tmax == False) or (((n-k)/2 - (n-k)//2 != 0 and tmax)):
-                            self.g[1][paliers[-(k+2)][i]-1][2] = max(poids)
-                        else:
-                            self.g[1][paliers[-(k + 2)][i] - 1][2] = min(poids)
+    def tour_pair(self, tour):
+        return(tour//2 == tour/2)
+
+    def inverse_liste(self, L):
+        Lb = L.copy()
+        Lc = []
+        for k in range(len(L)):
+            Lc = [Lb[k]] + Lc
+        return(Lc)
+
+    def max_avec_indice(self, L):
+        maxi = [L[0], 0]
+        for k in range(len(L)):
+            if L[k] > maxi[0]:
+                maxi = [L[k], k]
+        return maxi
+
+    def min_avec_indice(self, L):
+        mini = [L[0], 0]
+        for k in range(len(L)):
+            if L[k] > mini[0]:
+                mini = [L[k], k]
+        return mini
+
+    def min_max(self, iaPremierJoueur):
+        n = len(self.palier)
+        L = [i for i in range(len(self.sommets))]
+        palier_inverse = self.inverse_liste(self.palier)
+        for k in range(1, n):
+            L_palier_actuel = palier_inverse[k]
+            for i in L_palier_actuel:
+                L_succ = self.get_successeurs(i)
+                L_poids = self.poids_liste(L_succ)
+                if (self.tour_pair(k) == False and iaPremierJoueur) or (self.tour_pair(k) and iaPremierJoueur == False):
+                    maxi = self.max_avec_indice(L_poids)
+                    self.set_poids(maxi[1], maxi[0])
+                    L[i] = L_succ[maxi[1]]
+                else:
+                    mini = self.min_avec_indice(L_poids)
+                    self.set_poids(mini[1], mini[0])
+                    L[i] = L_succ[mini[1]]
+
+        L_coups = [0]
+        for m in range(n-1):
+            L_coups = L_coups + [L[L_coups[m]]]
+
+        return L_coups
+
+
+
 
