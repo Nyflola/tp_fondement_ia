@@ -15,3 +15,7 @@ Un fichier *"requirements.txt"* est fourni et permet une vérification ou une in
 **Utilisez la commande suivante pour l'utiliser :**
 
 > pip install -r ./requirements.txt
+
+Pour lancer le projet, utiliser la commande suivante:
+
+> python3 ./main.py
