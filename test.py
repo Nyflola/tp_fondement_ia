@@ -12,7 +12,12 @@ graphe.get_paliers()
 #print(graphe)
 #print(graphe.profondeur())
 #print(graphe.palier)
+graphe.set_poids_graphe()
+
+#print("graphe.sommets = ", [graphe.sommets[i][2] for i in range(len(graphe.sommets))])
 
 #print("graphe.sommets avant = ", graphe.sommets)
-#print("min-max = ", graphe.min_max(True))
+#print("min-max = ", graphe.min_max())
 #print("graphe.sommets = ", [graphe.sommets[i][2] for i in range(len(graphe.sommets))])
+
+print("Il faut jouer le coup : ", graphe.meilleur_coup())
