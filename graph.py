@@ -203,6 +203,7 @@ class Graphe:  # L'objet graphe
         return mini
 
     def min_max(self):
+        self.get_paliers()
         n = len(self.palier)
         L = [i for i in range(len(self.sommets))]
         palier_inverse = self.inverse_liste(self.palier)
