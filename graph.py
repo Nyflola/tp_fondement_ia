@@ -8,7 +8,7 @@ from game import coups_possibles, playerScore, jouer_coup, matrixToString, affic
 
 class Graphe:  # L'objet graphe
 
-    def __init__(self,plateau,joueurActuel, ncoup, IA = "absolue", profondeur = 1):
+    def __init__(self,plateau,joueurActuel, ncoup, IA = "positionnelle", profondeur = 1):
         self.idMax = 0 # Indice max utilisé en tant qu'idSommet (utilisé pour la création de sommet)
         self.etatInitial = 0
         self.sommets = [[self.idMax,plateau,"None",joueurActuel]]
@@ -42,6 +42,7 @@ class Graphe:  # L'objet graphe
         self.sommets += [nouveau_sommet] 
         self.successeurs[idpredecesseur] += [[self.idMax,coup]] 
         self.successeurs += [[]]
+        self.sommets[self.idMax][2] = self.evaluation_sommet(ncoup, IA, self.idMax, stringToMatrix(self.get_coup(self.idMax)), abs(joueur - 1))
         #self.evaluation_sommet(ncoup,IA,self.idMax,self.coup(self.idMax),joueur)
         return self.idMax
 
@@ -88,18 +89,20 @@ class Graphe:  # L'objet graphe
         return 0.5 + temp
 
     def evaluation_positionnel(self, coupMatrix): #On regarde les points de la case que l'on vient de jouer
-        return mat_points[coupMatrix]
+        if coupMatrix == None:
+            return 0
+        return -mat_points[coupMatrix[0]][coupMatrix[1]]
 
     def evaluation_mobilite(self, idsommet, currentPlayer): #On regarde le nombre de coups possibles à  ce tour (donc au plateau auquel on regarde)
         plateau = self.sommets[idsommet][1]
-        return len(coups_possibles(currentPlayer, plateau))
+        return -len(coups_possibles(currentPlayer, plateau))
 
     def evaluation_absolue(self, idsommet, currentPlayer, idIA): #On regarde la différence de pions entre les deux joueurs du point de vue de l'IA
         plateau = self.sommets[idsommet][1]
         if currentPlayer == idIA:
-            return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
+            return -(playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
         else:
-            return -(playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer - 1)])
+            return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer - 1)])
 
     def evaluation_sommet(self, ncoup, ia, idsommet, coupMatrix, currentPlayer):
         if ia == "positionnelle" or (ia == "mixte" and ncoup < 24):
