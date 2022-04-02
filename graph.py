@@ -1,5 +1,7 @@
 
 #!/usr/bin/env python3
+import string
+from sys import stderr
 import numpy as np
 from copy import deepcopy
 from ai import mat_points
@@ -8,7 +10,7 @@ from game import coups_possibles, playerScore, jouer_coup, matrixToString, affic
 
 class Graphe:  # L'objet graphe
 
-    def __init__(self,plateau,joueurActuel, ncoup, IA = "positionnelle", profondeur = 1):
+    def __init__(self,plateau,joueurActuel, ncoup, IA = "absolue", profondeur = 1):
         self.idMax = 0 # Indice max utilisé en tant qu'idSommet (utilisé pour la création de sommet)
         self.etatInitial = 0
         self.sommets = [[self.idMax,plateau,"None",joueurActuel]]
@@ -20,6 +22,7 @@ class Graphe:  # L'objet graphe
         next = []
         joueurSuivant = abs(joueurActuel-1)
         while self.profondeur() != profondeur:
+            ncoup += 1
             for sommet in current:
                 #print("sommet " + str(sommet))
                 plateau = self.get_plateau(sommet)
@@ -38,12 +41,10 @@ class Graphe:  # L'objet graphe
     def ajout_Sommet(self,plateau,joueur, IA,idpredecesseur,coup, ncoup):
         self.idMax = self.idMax + 1
         nouveau_sommet = [self.idMax,plateau, "None" , joueur]
-        nouveau_successeur = [idpredecesseur,coup]
         self.sommets += [nouveau_sommet] 
         self.successeurs[idpredecesseur] += [[self.idMax,coup]] 
         self.successeurs += [[]]
-        self.sommets[self.idMax][2] = self.evaluation_sommet(ncoup, IA, self.idMax, stringToMatrix(self.get_coup(self.idMax)), abs(joueur - 1))
-        #self.evaluation_sommet(ncoup,IA,self.idMax,self.coup(self.idMax),joueur)
+        self.sommets[self.idMax][2] = self.evaluation_sommet(ncoup, IA, self.idMax)
         return self.idMax
 
     def get_predecesseur(self,idSommet):
@@ -72,10 +73,12 @@ class Graphe:  # L'objet graphe
     def get_poids(self, idSommet):
         return self.sommets[idSommet][2]
 
+    def get_joueur(self,idSommet):
+        return self.sommets[idSommet][3]
+
     def set_poids(self, idSommet, poids):
         self.sommets[idSommet][2] = poids
         return None
-
 
     def profondeur(self, idSommet = 0):
         succ = self.get_successeurs(idSommet)
@@ -88,29 +91,56 @@ class Graphe:  # L'objet graphe
             temp = max(temp,self.profondeur(s))
         return 0.5 + temp
 
-    def evaluation_positionnel(self, coupMatrix): #On regarde les points de la case que l'on vient de jouer
-        if coupMatrix == None:
-            return 0
-        return -mat_points[coupMatrix[0]][coupMatrix[1]]
+    def evaluation_positionnelle(self, idsommet): #On regarde les points de la case que l'on vient de jouer
+        points_j1 = 0
+        points_j2 = 0
+        plateau = self.get_plateau(idsommet)
+        for i in range(8):
+            for j in range(8):
+                if plateau[i][j] == 0:
+                    points_j1 += mat_points[i][j]
+                if plateau[i][j] == 1:
+                    points_j2 += mat_points[i][j]
+        if self.sommets[idsommet][3] == 0:
+            return points_j2 - points_j1
+        else:
+            return points_j1 - points_j2
 
-    def evaluation_mobilite(self, idsommet, currentPlayer): #On regarde le nombre de coups possibles à  ce tour (donc au plateau auquel on regarde)
-        plateau = self.sommets[idsommet][1]
-        return -len(coups_possibles(currentPlayer, plateau))
+    def estUnCoin(self,coupString):
+        try:
+            coupMatrix = stringToMatrix(coupString)
+            if coupMatrix == [0,0] or coupMatrix == [7,7] or coupMatrix == [0,7] or coupMatrix == [7,0]:
+                return True
+        except Exception as e:
+            stderr("fonction estUnCoin impossible : coupString est \"None\"")
+        return False
 
-    def evaluation_absolue(self, idsommet, currentPlayer, idIA): #On regarde la différence de pions entre les deux joueurs du point de vue de l'IA
+    def evaluation_mobilitee(self, idsommet): #On regarde le nombre de coups possibles à  ce tour (donc au plateau auquel on regarde)
         plateau = self.sommets[idsommet][1]
+        coupString = self.get_coup(idsommet)
+        joueur = self.get_joueur(idsommet)
+        if coupString != None:
+            if self.estUnCoin(coupString):
+                return 9999
+            else:
+                return -len(coups_possibles(joueur, plateau))
+        return 0
+
+    def evaluation_absolue(self, idsommet, idIA): #On regarde la différence de pions entre les deux joueurs du point de vue de l'IA
+        plateau = self.sommets[idsommet][1]
+        currentPlayer = self.get_joueur(idsommet)
         if currentPlayer == idIA:
             return -(playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer-1)])
         else:
             return (playerScore(plateau)[currentPlayer] - playerScore(plateau)[abs(currentPlayer - 1)])
 
-    def evaluation_sommet(self, ncoup, ia, idsommet, coupMatrix, currentPlayer):
+    def evaluation_sommet(self, ncoup, ia, idsommet):
         if ia == "positionnelle" or (ia == "mixte" and ncoup < 24):
-            return self.evaluation_positionnel(coupMatrix)
+            return self.evaluation_positionnelle(idsommet)
         if ia == "mobilitee" or (ia == "mixte" and ncoup < 44):
-            return self.evaluation_mobilite(idsommet,  currentPlayer)
+            return self.evaluation_mobilitee(idsommet)
         if ia == "absolue" or (ia == "mixte" and ncoup > 43):
-            return self.evaluation_absolue(idsommet, currentPlayer, abs(self.sommets[0][3] - 1))
+            return self.evaluation_absolue(idsommet, abs(self.sommets[0][3] - 1))
 
     def set_poids_graphe(self):
         n = len(self.sommets)
