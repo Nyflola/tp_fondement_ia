@@ -213,14 +213,15 @@ class Graphe:  # L'objet graphe
             for i in L_palier_actuel:
                 L_succ = self.get_successeurs(i)
                 L_poids = self.poids_liste(L_succ)
-                if (self.tour_pair(k) == False):
-                    maxi = self.max_avec_indice(L_poids)
-                    self.set_poids(maxi[1], maxi[0])
-                    L[i] = L_succ[maxi[1]]
-                else:
-                    mini = self.min_avec_indice(L_poids)
-                    self.set_poids(mini[1], mini[0])
-                    L[i] = L_succ[mini[1]]
+                if L_succ != []:
+                    if (self.tour_pair(k) == False):
+                        maxi = self.max_avec_indice(L_poids)
+                        self.set_poids(maxi[1], maxi[0])
+                        L[i] = L_succ[maxi[1]]
+                    else:
+                        mini = self.min_avec_indice(L_poids)
+                        self.set_poids(mini[1], mini[0])
+                        L[i] = L_succ[mini[1]]
 
         L_coups = [0]
         for m in range(n-1):
