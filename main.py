@@ -11,7 +11,7 @@ from graph import Graphe
 
 profondeur_IA = 1
 
-def calcul_temps(IA1="absolue",IA2="mobilitee"):
+def calcul_temps(IA1="absolue",IA2="positionnelle"):
     temp_generation_arbre_IA1 = 0
     temps_min_max_IA1 = 0
     nb1 = 0
