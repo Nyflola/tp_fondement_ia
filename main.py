@@ -3,13 +3,92 @@
 from copy import deepcopy
 import os
 from platform import system
-from time import sleep
+from time import sleep,time
 import random
 from ai import *
 from game import *
 from graph import Graphe
 
-profondeur_IA = 3
+profondeur_IA = 1
+
+def calcul_temps(IA1="absolue",IA2="absolue"):
+    temp_generation_arbre_IA1 = 0
+    temps_min_max_IA1 = 0
+    nb1 = 0
+    moyenne_gen_arbre_IA1 = 0
+    moyenne_min_max_IA1 = 0
+    temp_generation_arbre_IA2 = 0
+    temps_min_max_IA2 = 0
+    nb2 = 0
+    moyenne_gen_arbre_IA2 = 0
+    moyenne_min_max_IA2 = 0
+
+    debut_de_partie = time()
+    global profondeur_IA
+    tour_IA1 = random.choice([0,1])
+    plateau = init()
+    currentPlayer = 0
+    ncoup = 0
+    liste_coups = []
+    while not isGameOver(currentPlayer,plateau):
+        if currentPlayer == tour_IA1:
+            print("Tour IA1, coup n°%d" %(ncoup),end="\r")
+            deb = time()
+            graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA1,profondeur_IA)
+            fin = time()
+            temp_generation_arbre_IA1 += fin - deb
+            deb = time()
+            coup = graphe.meilleur_coup()
+            fin = time()
+            temps_min_max_IA1 += fin - deb
+            nb1 += 1
+            liste_coups.append(coup)
+            jouer_coup(currentPlayer,coup,plateau)
+        else:
+            print("Tour IA2, coup n°%d, coup possible %d" %(ncoup,len(coups_possibles(currentPlayer,plateau))),end="\r")
+            deb = time()
+            graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA2,profondeur_IA)
+            fin = time()
+            temp_generation_arbre_IA2 += fin - deb
+            deb = time()
+            coup = graphe.meilleur_coup()
+            fin = time()
+            temps_min_max_IA2 += fin - deb
+            nb2 += 1
+            liste_coups.append(coup)
+            jouer_coup(currentPlayer,coup,plateau)
+        ncoup += 1
+        currentPlayer = (currentPlayer + 1) % 2
+    score = playerScore(plateau)
+    if score[tour_IA1] > score[abs(tour_IA1-1)]:
+        print("\nL'IA n°1 a gagné! %d vs %d" %(score[tour_IA1],score[abs(tour_IA1-1)]))
+    else:
+        if score[0] == score[1]:
+            print("\nLes IAs sont égalitées! %d vs %d" %(score[tour_IA1],score[abs(tour_IA1-1)]))
+        else:
+            print("\nL'IA n°2 a gagné! %d vs %d" %(score[abs(tour_IA1-1)],score[tour_IA1]))
+    fin_de_partie = time()
+    clear()
+    print("""Statistiques :
+
+Pour l'IA n°1 (%s):
+Temps de génération total des graphes: %.4f secs.
+Temps de calcul total min max: %.4f secs.
+Temps de génération moyen d'un graphe: %.4f secs.
+Temps de calcul moyen min max: %.4f secs.
+
+Pour l'IA n°2 (%s):
+Temps de génération total des graphes: %.4f secs.
+Temps de calcul total min max: %.4f secs.
+Temps de génération moyen d'un graphe: %.4f secs.
+Temps de calcul moyen min max: %.4f secs.
+
+Temps de partie: %.4f secs.
+Nombre de coups: %d""" % (IA1,temp_generation_arbre_IA1,temps_min_max_IA1,temp_generation_arbre_IA1 / nb1,
+ temps_min_max_IA1 / nb1, IA2,temp_generation_arbre_IA2,temps_min_max_IA2,temp_generation_arbre_IA2/nb2,
+ temps_min_max_IA2/nb2,fin_de_partie-debut_de_partie,len(liste_coups)))
+    #print("Résumé des coups joués : " + str(liste_coups))
+    return
 
 def clear():
     if system() == 'Linux':
@@ -85,9 +164,10 @@ Votre choix: """
             else:
                 clear()
                 print("Tour IA")
-                graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA,profondeur_IA)
-                coup = graphe.meilleur_coup()
                 affichage(currentPlayer,plateau)
+                graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA,profondeur_IA)
+                print("Arbre généré")
+                coup = graphe.meilleur_coup()
                 print("L'IA joue " + str(coup))
                 jouer_coup(currentPlayer,coup,plateau)
                 liste_coups.append(coup.upper())
@@ -126,32 +206,35 @@ def game_IA_vs_IA(IA1,IA2):
 -     Début de partie    -
 --------------------------""")
         affichage(currentPlayer,plateau)
-
+        sleep(2)
         while not isGameOver(currentPlayer,plateau):
             if currentPlayer == tour_IA1:
                 clear()
                 print("""--------------------------
 -       Tour IA n°1      -
 --------------------------""")
+                affichage(currentPlayer,plateau)
                 graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA1,profondeur_IA)
+                
                 coup = graphe.meilleur_coup()
                 liste_coups.append(coup)
                 jouer_coup(currentPlayer,coup,plateau)
-                affichage(currentPlayer,plateau)
+                
                 print("L'IA n°1 joue " + str(coup))
-                sleep(3000)
+                sleep(2)
             else:
                 clear()
                 print("""--------------------------
 -       Tour IA n°2      -
 --------------------------""")
+                affichage(currentPlayer,plateau)
                 graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA2,profondeur_IA)
                 coup = graphe.meilleur_coup()
                 liste_coups.append(coup)
                 jouer_coup(currentPlayer,coup,plateau)
-                affichage(currentPlayer,plateau)
+                
                 print("L'IA n°2 joue " + str(coup))
-                sleep(3000)
+                sleep(2)
             ncoup += 1
             currentPlayer = (currentPlayer + 1) % 2
         score = playerScore(plateau)
@@ -360,7 +443,8 @@ def menu_principal():
 
 1) Jouer "Joueur vs Joueur"
 2) Jouer "Joueur vs IA"
-3) Quitter
+3) Regarder "IA vs IA"
+4) Quitter
 
 Choix: """
     menu_erreur = """--------------------------
@@ -369,9 +453,10 @@ Choix: """
 
 1) Jouer "Joueur vs Joueur"
 2) Jouer "Joueur vs IA"
-3) Quitter
+3) Regarder "IA vs IA"
+4) Quitter
 
-Choix (Entre 1 et 3!): """
+Choix (Entre 1 et 4!): """
     
     choix = input(menu)
     if choix == "1":
@@ -384,6 +469,9 @@ Choix (Entre 1 et 3!): """
         clear()
         menu_IA()
     if choix == "3":
+        clear()
+        menu_IA_vs_IA()
+    if choix == "4":
         clear()
         exit(0)
 
@@ -400,6 +488,9 @@ Choix (Entre 1 et 3!): """
             clear()
             menu_IA()
         if choix == "3":
+            clear()
+            menu_IA_vs_IA()
+        if choix == "4":
             clear()
             exit(0)
 
@@ -446,4 +537,5 @@ def game():
         menu_principal()
 
 if __name__ == '__main__':
-    menu_principal()
+    #menu_principal()
+    calcul_temps()
