@@ -42,8 +42,9 @@ def calcul_temps(IA1="absolue",IA2="mobilitee"):
             fin = time()
             temps_min_max_IA1 += fin - deb
             nb1 += 1
+            if coup != None:
+                jouer_coup(currentPlayer,coup,plateau)
             liste_coups.append(coup)
-            jouer_coup(currentPlayer,coup,plateau)
         else:
             print("Tour IA2, coup n°%d, coup possible %d" %(ncoup,len(coups_possibles(currentPlayer,plateau))),end="\r")
             deb = time()
@@ -55,8 +56,9 @@ def calcul_temps(IA1="absolue",IA2="mobilitee"):
             fin = time()
             temps_min_max_IA2 += fin - deb
             nb2 += 1
+            if coup != None:
+                jouer_coup(currentPlayer,coup,plateau)
             liste_coups.append(coup)
-            jouer_coup(currentPlayer,coup,plateau)
         ncoup += 1
         currentPlayer = (currentPlayer + 1) % 2
     score = playerScore(plateau)
@@ -168,8 +170,11 @@ Votre choix: """
                 graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA,profondeur_IA)
                 print("Arbre généré")
                 coup = graphe.meilleur_coup()
-                print("L'IA joue " + str(coup))
-                jouer_coup(currentPlayer,coup,plateau)
+                if coup == None:
+                    print("L'IA n'a pas de coups possibles")
+                else:
+                    print("L'IA joue " + str(coup))
+                    jouer_coup(currentPlayer,coup,plateau)
                 liste_coups.append(coup.upper())
                 pause()
             ncoup += 1
@@ -215,12 +220,13 @@ def game_IA_vs_IA(IA1,IA2):
 --------------------------""")
                 affichage(currentPlayer,plateau)
                 graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA1,profondeur_IA)
-                
                 coup = graphe.meilleur_coup()
+                if coup == None:
+                    print("L'IA n°1 n'a pas de coups possibles")
+                else:
+                    print("L'IA n°1 joue " + str(coup))
+                    jouer_coup(currentPlayer,coup,plateau)
                 liste_coups.append(coup)
-                jouer_coup(currentPlayer,coup,plateau)
-                
-                print("L'IA n°1 joue " + str(coup))
                 sleep(2)
             else:
                 clear()
@@ -230,10 +236,12 @@ def game_IA_vs_IA(IA1,IA2):
                 affichage(currentPlayer,plateau)
                 graphe = Graphe(deepcopy(plateau),currentPlayer,ncoup,IA2,profondeur_IA)
                 coup = graphe.meilleur_coup()
+                if coup == None:
+                    print("L'IA n°1 n'a pas de coups possibles")
+                else:
+                    print("L'IA n°1 joue " + str(coup))
+                    jouer_coup(currentPlayer,coup,plateau)
                 liste_coups.append(coup)
-                jouer_coup(currentPlayer,coup,plateau)
-                
-                print("L'IA n°2 joue " + str(coup))
                 sleep(2)
             ncoup += 1
             currentPlayer = (currentPlayer + 1) % 2
