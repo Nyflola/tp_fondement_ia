@@ -9,9 +9,10 @@ from ai import *
 from game import *
 from graph import Graphe
 
-profondeur_IA = 1
+profondeur_IA = 3
 
-def calcul_temps(IA1="absolue",IA2="positionnelle"):
+def calcul_temps(IA1="absolue",IA2="absolue"):
+    clear()
     temp_generation_arbre_IA1 = 0
     temps_min_max_IA1 = 0
     nb1 = 0
@@ -62,17 +63,19 @@ def calcul_temps(IA1="absolue",IA2="positionnelle"):
         ncoup += 1
         currentPlayer = (currentPlayer + 1) % 2
     score = playerScore(plateau)
+    clear()
+    print("""**************************
+*       Statistiques     *
+**************************""")
     if score[tour_IA1] > score[abs(tour_IA1-1)]:
-        print("\nL'IA n°1 a gagné! %d vs %d" %(score[tour_IA1],score[abs(tour_IA1-1)]))
+        print("\nL'IA n°1 a gagné: %d (%s) vs %d (%s)" %(score[tour_IA1],IA1,score[abs(tour_IA1-1)],IA2))
     else:
         if score[0] == score[1]:
-            print("\nLes IAs sont égalitées! %d vs %d" %(score[tour_IA1],score[abs(tour_IA1-1)]))
+            print("\nLes IAs sont égalitées: %d (IA1:%s) vs %d (IA2:%s)" %(score[tour_IA1],IA1,score[abs(tour_IA1-1)],IA2))
         else:
-            print("\nL'IA n°2 a gagné! %d vs %d" %(score[abs(tour_IA1-1)],score[tour_IA1]))
+            print("\nL'IA n°2 a gagné: %d (%s) vs %d (%s)" %(score[abs(tour_IA1-1)],IA2,score[tour_IA1],IA1))
     fin_de_partie = time()
-    clear()
-    print("""Statistiques :
-
+    print("""
 Pour l'IA n°1 (%s):
 Temps de génération total des graphes: %.4f secs.
 Temps de calcul total min max: %.4f secs.

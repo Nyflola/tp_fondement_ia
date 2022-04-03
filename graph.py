@@ -24,14 +24,12 @@ class Graphe:  # L'objet graphe
         while self.prof != profondeur:
             ncoup += 1
             for sommet in current:
-                #print("sommet " + str(sommet))
                 plateau = self.get_plateau(sommet)
                 coups = coups_possibles(joueurActuel,plateau)
                 if coups == []:
                     nouveau_plateau = deepcopy(plateau)
                     self.ajout_Sommet(nouveau_plateau, joueurSuivant, IA, sommet, None, ncoup)
                 for coup in coups:
-                    #print("coup " + str(coup))
                     nouveau_plateau = deepcopy(plateau)
                     jouer_coup(joueurActuel,matrixToString(coup),nouveau_plateau)
                     next.append(self.ajout_Sommet(nouveau_plateau,joueurSuivant,IA,sommet,matrixToString(coup),ncoup))
@@ -234,8 +232,6 @@ class Graphe:  # L'objet graphe
 
     def meilleur_coup(self):
         L = self.min_max()
-        print("L = ", L)
-        print("paliers = ", self.palier)
         return self.get_coup(L[1])
 
 
