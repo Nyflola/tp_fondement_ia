@@ -17,11 +17,11 @@ class Graphe:  # L'objet graphe
         self.successeurs = [[]] # [ [ [1 4], [2 9] ], [] ]
         self.IA = IA
         self.palier = [1]
-        
+        self.prof = 0
         current = [self.etatInitial]
         next = []
         joueurSuivant = abs(joueurActuel-1)
-        while self.profondeur() != profondeur:
+        while self.prof != profondeur:
             ncoup += 1
             for sommet in current:
                 #print("sommet " + str(sommet))
@@ -32,6 +32,7 @@ class Graphe:  # L'objet graphe
                     nouveau_plateau = deepcopy(plateau)
                     jouer_coup(joueurActuel,matrixToString(coup),nouveau_plateau)
                     next.append(self.ajout_Sommet(nouveau_plateau,joueurSuivant,IA,sommet,matrixToString(coup),ncoup))
+            self.prof += 0.5
             current = next
             next = []
             joueurActuel = joueurSuivant
