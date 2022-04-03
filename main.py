@@ -9,9 +9,9 @@ from ai import *
 from game import *
 from graph import Graphe
 
-profondeur_IA = 3
+profondeur_IA = 2
 
-def calcul_temps(IA1="absolue",IA2="absolue"):
+def calcul_temps(IA1="absolue",IA2="positionnelle"):
     clear()
     temp_generation_arbre_IA1 = 0
     temps_min_max_IA1 = 0

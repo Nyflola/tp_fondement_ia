@@ -16,7 +16,7 @@ class Graphe:  # L'objet graphe
         self.sommets = [[self.idMax,plateau,"None",joueurActuel]]
         self.successeurs = [[]] # [ [ [1 4], [2 9] ], [] ]
         self.IA = IA
-        self.palier = [1]
+        self.palier = []
         self.prof = 0
         current = [self.etatInitial]
         next = []
